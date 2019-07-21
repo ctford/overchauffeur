@@ -1,11 +1,11 @@
-(ns kolmogorov-music.geb
+(ns overchauffeur.geb
   (:require [overtone.live :refer :all :exclude [stop]]
             [leipzig.melody :refer :all]
             [leipzig.canon :refer [canon interval]]
             [leipzig.scale :refer [lower B minor from]]
             [leipzig.live :as live]
             [leipzig.live :refer [stop]]
-            [kolmogorov-music.coding :as coding]))
+            [overchauffeur.coding :as coding]))
 
 (def geb
   (let [theme (->> "GEB"
@@ -52,7 +52,7 @@
   (live/jam (var geb))
   (def geb nil)
 
-  (do (recording-start "geb.wav")
+  (do (recording-start "geb.aiff")
       (live/play geb))
   (recording-stop))
 
@@ -73,9 +73,9 @@
   [{midi :pitch seconds :duration}]
   (some-> midi midi->hz (overchauffeur seconds 1500)))
 
-(def godel (sample "samples/godel.wav"))
-(def escher (sample "samples/escher.wav"))
-(def bach (sample "samples/bach.wav"))
+(def godel (sample "samples/goedel.aiff"))
+(def escher (sample "samples/escher.aiff"))
+(def bach (sample "samples/bach.aiff"))
 
 (defn book [initial]
   (({\G godel

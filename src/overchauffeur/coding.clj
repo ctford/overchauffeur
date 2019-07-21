@@ -1,4 +1,4 @@
-(ns kolmogorov-music.coding
+(ns overchauffeur.coding
   (:require [leipzig.melody :refer :all]
             [leipzig.scale :as scale]
             [leipzig.live :as live]
@@ -65,6 +65,6 @@
   (->> n
        char
        str
-       (symbol "kolmogorov-music.coding")
+       (symbol "overchauffeur.coding")
        find-var
        deref))
