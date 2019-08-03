@@ -61,7 +61,7 @@
          ;(with beat #_back-beat)
          ;(with hit)
          ;(with (->> scale (with (where :pitch (from 2) scale))))
-         ;(with #_alt-bass rising twiddle decoration)
+         ;(with alt-bass #_rising twiddle decoration)
          (times 2)
          (wherever (comp not :theme) :pitch (fnil (comp B minor) 0))
          (tempo (bpm 90)))))
