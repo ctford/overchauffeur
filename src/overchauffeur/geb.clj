@@ -80,8 +80,8 @@
 
 (definst overchauffeur [freq 110 dur 1.0 top 1500 vol 0.25]
   (let [inst (-> (sin-osc freq)
-                 (+ (* 1/6 (sin-osc (* 2.987 freq))))
-                 (+ (* 1/6 (sin-osc (* 3.004 freq))))
+                 (+ (* 1/5 (sin-osc (* 2.987 freq))))
+                 (+ (* 1/7 (sin-osc (* 3.004 freq))))
                  (+ (* 1/5 (sin-osc (* 4.01 freq))))
                  (+ (* 1/2 (sin-osc (* 0.5 freq))))
                  (* 3)
@@ -90,6 +90,7 @@
                  (clip2 0.9)
                  ;(* (square 1.5))
                  (rlpf resonance 0.2)
+                 ;(+ (* 1/2 (square freq)))
                  (* (env-gen (adsr 0.003 0.2 0.5 0.1) (line:kr 1 0 dur) :action FREE))
                  (* vol))
         delayed (delay-l inst 0.001)
