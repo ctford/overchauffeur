@@ -9,6 +9,7 @@
             [overchauffeur.coding :as coding]))
 
 (def bar-lengths [3.5 3.5 7])
+(def progression [-2 -1 0 0])
 
 (def geb
   (let [theme (->> "GEB"
@@ -25,16 +26,16 @@
                           (canon #(with (sample %) (ascii %))))
         robot (->> triple-canon
                    (filter #(-> % :part (= :sample))))
-        bass (->> (phrase [2.5 0.5 0.5 2.5 0.5 0.5 6.5 0.5] [-2 -2 -2 -1 -1 -1 0 0])
+        bass (->> (phrase [3 0.5 3 0.5 6.5 0.5] [-2 -2 -1 -1 0 0])
                   (canon (interval -7))
                   (where :pitch (comp lower lower)))
         alt-bass (->> (phrase (repeat 4 4) (cycle [3 0]))
                       (canon (interval -7))
                       (where :pitch (comp lower lower)))
-        rising (->> (phrase [4 4 8] [-2 -1 0])
+        rising (->> (phrase [4 4 8] progression)
                     (canon (interval -7))
                     (where :pitch (comp lower lower)))
-        riff (->> [-2 -1 0 0]
+        riff (->> progression
                   (mapthen #(->> (phrase (repeat 7 1/2)
                                          (interleave [[0 2] [0 2] [0 3] [0 2]] (repeat -3)))
                                  (where :pitch (from %)))))
@@ -48,17 +49,19 @@
                   (phrase (repeat 32 1/2) (cycle [4 2 2 0 -1]))
                   (phrase (repeat 64 1/4) (cycle [4 2 5 4 5 4 7 7])))
         decoration (phrase (repeat 64 1/4) (cycle [7 8 9 11 7 6]))
-        beat (->> (phrase [1 1 0.5 0.5 0.5 2.5 0.5 0.5] (repeat 0))
-                  (having :part [:kick :clap :snare :kick :snare :kick :kick :snare])
+        beat (->> (phrase [1 1 0.5 0.5 0.5 2 0.5 0.5 0.5] (repeat -21))
+                  (having :part [:kick :snare :snare :kick :snare :kick :snare :kick :snare])
                   (times 2))
-        back-beat (->> (phrase (repeat 28 1/4) (repeat 7)) (having :part (repeat :click)))
+        back-beat (->> (phrase (repeat 14 1/2) (repeat 7))
+                       (times 2)
+                       (having :part (repeat :click)))
         scale (->> (phrase (repeat 1/8) (concat (range -14 35 1) (range 35 -28 -1))))]
     (->> []
-         (with bass #_double-canon)
-         ;(with riff)
+         (with bass double-canon)
+         (with riff)
          ;(with whirl)
-         ;(with robot)
-         ;(with beat #_back-beat)
+         (with robot)
+         (with beat #_back-beat)
          ;(with hit)
          ;(with (->> scale (with (where :pitch (from 2) scale))))
          ;(with alt-bass #_rising twiddle decoration)
@@ -82,7 +85,7 @@
   (out:kr out-bus (lf-noise1:kr freq)))
 (defonce random-walk (audio-bus))
 (defonce walk (walker random-walk))
-(def resonance (mul-add (in:kr random-walk) 700 2500))
+(def resonance (mul-add (in:kr random-walk) 2000 2500))
 
 (definst overchauffeur [freq 110 dur 1.0 top 1500 vol 0.25]
   (let [inst (-> (sin-osc freq)
@@ -97,7 +100,7 @@
                  (clip2 0.9)
                  ;(* (square 3))
                  (rlpf resonance 0.2)
-                 (* (env-gen (adsr 0.05 0.2 0.6 0.2) (line:kr 1 0 dur) :action FREE))
+                 (* (env-gen (adsr 0.005 0.2 0.6 0.1) (line:kr 1 0 dur) :action FREE))
                  (* vol))
         delayed (delay-l inst 0.001)
         reverbed (free-verb delayed :damp 0.1 :mix 0.1 :room 0.2)
@@ -110,19 +113,19 @@
 
 (defmethod live/play-note :kick
   [{midi :pitch seconds :duration}]
-  (some-> midi (drums/kick4 :amp 5)))
+  (some-> midi midi->hz (drums/kick2 :amp 4 :decay 0.1 :noise 0.01)))
 
 (defmethod live/play-note :snare
   [{midi :pitch seconds :duration}]
-  (some-> midi (drums/snare :amp 2)))
+  (some-> midi midi->hz (drums/snare :amp 1 :crackle-amp 200)))
 
 (defmethod live/play-note :clap
   [{midi :pitch seconds :duration}]
-  (some-> midi (drums/haziti-clap :amp 5)))
+  (some-> midi midi->hz (drums/haziti-clap :amp 5)))
 
 (defmethod live/play-note :click
   [{midi :pitch seconds :duration}]
-  (some-> midi (drums/closed-hat :amp 0.3)))
+  (some-> midi midi->hz (drums/closed-hat :amp 0.2 :hi resonance)))
 
 (def godel (sample "samples/goedel.aiff"))
 (def escher (sample "samples/escher.aiff"))
