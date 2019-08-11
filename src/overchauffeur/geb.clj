@@ -6,6 +6,7 @@
             [leipzig.live :as live]
             [leipzig.live :refer [stop]]
             [overtone.inst.drum :as drums]
+            [jazz.instruments :as inst]
             [overchauffeur.coding :as coding]))
 
 (def bar-lengths [3.5 3.5 7])
@@ -20,7 +21,9 @@
         alt-bass (->> (phrase (repeat 4 4) (cycle [3 0]))
                       (canon (interval -7))
                       (where :pitch (comp lower lower)))
-        rising (->> bass (where :duration {3 4, 6.5 7.5}))
+        rising (->> (phrase [4 4 8] progression)
+                  (canon (interval -7))
+                  (where :pitch (comp lower lower)))
         riff (->> progression
                   (mapthen #(->> (phrase (repeat 7 1/2)
                                          (interleave [[0 2] [0 2] [0 3] [0 2]] (repeat -3)))
@@ -45,16 +48,16 @@
                   (having :part (repeat :kick)))
         scale (phrase (repeat 1/8) (concat (range -14 35 1) (range 35 -28 -1)))]
     (->> []
-         ;(with bass)
+         (with bass)
          ;(with riff)
          ;(with whirl)
          ;(with beat steady #_flat)
          ;(with hit)
          ;(with (->> scale (canon (interval 2))))
-         ;(with alt-bass #_rising twiddle decoration)
+         ;(with #_alt-bass rising twiddle decoration)
          (times 2)
          (where :pitch (comp B minor))
-         (with (->> "GEB"
+         #_(with (->> "GEB"
                     (map coding/char->ascii)
                     (phrase bar-lengths)
                     #_(canon #(->> % ascii (canon initial)))))
@@ -63,7 +66,7 @@
 (comment
   (map fx-chorus [0 1])
   (map fx-distortion [0 1] [2 2] [0.18 0.14])
-  (volume 0.8)
+  (volume 0.7)
   (live/jam (var geb))
   (def geb nil)
 
@@ -101,6 +104,10 @@
 (defmethod live/play-note :default
   [{midi :pitch seconds :duration}]
   (some-> midi midi->hz (overchauffeur seconds)))
+
+#_(defmethod live/play-note :default
+  [{midi :pitch seconds :duration}]
+  (some-> midi (inst/piano :duration seconds)))
 
 (defmethod live/play-note :kick
   [{midi :pitch seconds :duration}]
