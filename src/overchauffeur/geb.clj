@@ -20,9 +20,7 @@
         alt-bass (->> (phrase (repeat 4 4) (cycle [3 0]))
                       (canon (interval -7))
                       (where :pitch (comp lower lower)))
-        rising (->> (phrase [4 4 8] progression)
-                    (canon (interval -7))
-                    (where :pitch (comp lower lower)))
+        rising (->> bass (where :duration {3 4, 6.5 7.5}))
         riff (->> progression
                   (mapthen #(->> (phrase (repeat 7 1/2)
                                          (interleave [[0 2] [0 2] [0 3] [0 2]] (repeat -3)))
@@ -45,14 +43,14 @@
                     (having :part (repeat :click)))
         flat (->> (phrase (repeat 14 1) (repeat -21))
                   (having :part (repeat :kick)))
-        scale (->> (phrase (repeat 1/8) (concat (range -14 35 1) (range 35 -28 -1))))]
+        scale (phrase (repeat 1/8) (concat (range -14 35 1) (range 35 -28 -1)))]
     (->> []
          ;(with bass)
          ;(with riff)
          ;(with whirl)
          ;(with beat steady #_flat)
          ;(with hit)
-         ;(with (->> scale (with (where :pitch (from 2) scale))))
+         ;(with (->> scale (canon (interval 2))))
          ;(with alt-bass #_rising twiddle decoration)
          (times 2)
          (where :pitch (comp B minor))
@@ -119,14 +117,17 @@
   [{midi :pitch seconds :duration}]
   (drums/closed-hat :amp 0.1))
 
-(def godel (sample "samples/goedel.aiff"))
-(def escher (sample "samples/escher.aiff"))
-(def bach (sample "samples/bach.aiff"))
+(defonce godel (sample "samples/goedel.aiff"))
+(defonce escher (sample "samples/escher.aiff"))
+(defonce bach (sample "samples/bach.aiff"))
 
 (defn book [initial]
-  (({(coding/char->ascii \G) godel
-     (coding/char->ascii \E) escher
-     (coding/char->ascii \B) bach}
+  (({coding/G godel
+     coding/E escher
+     coding/B bach
+     coding/g godel
+     coding/e escher
+     coding/b bach}
     initial
     (constantly nil))))
 
