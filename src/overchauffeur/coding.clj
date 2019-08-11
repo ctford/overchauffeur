@@ -61,6 +61,11 @@
     (comp scale/A scale/low scale/minor)
     (range)))
 
+(defs [a b c d e f g]
+  (map
+    int
+    "ABCDEFG"))
+
 (defn ascii->midi [n]
   (->> n
        char
@@ -68,3 +73,12 @@
        (symbol "overchauffeur.coding")
        find-var
        deref))
+
+(def midi->ascii
+  {A 65
+   B 66
+   C 67
+   D 68
+   E 69
+   F 70
+   G 71})

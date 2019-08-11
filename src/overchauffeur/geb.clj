@@ -2,7 +2,7 @@
   (:require [overtone.live :refer :all :exclude [stop]]
             [leipzig.melody :refer :all]
             [leipzig.canon :refer [canon interval]]
-            [leipzig.scale :refer [lower B minor from]]
+            [leipzig.scale :refer [high low lower E B minor from]]
             [leipzig.live :as live]
             [leipzig.live :refer [stop]]
             [overtone.inst.drum :as drums]
@@ -12,20 +12,8 @@
 (def progression [-2 -1 0 0])
 
 (def geb
-  (let [theme (->> "GEB"
-                   (map coding/char->ascii)
-                   (phrase bar-lengths)
-                   (all :theme true))
-        ascii #(where :pitch coding/ascii->midi %)
-        double-canon (->> theme
-                          (canon ascii))
-        sample #(->> %
-                     (where :pitch char)
-                     (all :part :sample))
-        triple-canon (->> theme
-                          (canon #(with (sample %) (ascii %))))
-        robot (->> triple-canon
-                   (filter #(-> % :part (= :sample))))
+  (let [ascii #(where :pitch coding/ascii->midi %)
+        initial #(->> % (where :pitch coding/midi->ascii) (all :part :sample))
         bass (->> (phrase [3 0.5 3 0.5 6.5 0.5] [-2 -2 -1 -1 0 0])
                   (canon (interval -7))
                   (where :pitch (comp lower lower)))
@@ -53,21 +41,25 @@
         beat (->> (phrase [1 1 0.5 0.5 0.5] (repeat -21))
                   (having :part [:kick :snare :clap :kick :snare])
                   (times 4))
-        back-beat (->> (phrase (repeat 14 1/2) (repeat 7))
-                       (times 2)
-                       (having :part (repeat :click)))
+        steady (->> (phrase (repeat 28 1/2) (repeat 0))
+                    (having :part (repeat :click)))
+        flat (->> (phrase (repeat 14 1) (repeat -21))
+                  (having :part (repeat :kick)))
         scale (->> (phrase (repeat 1/8) (concat (range -14 35 1) (range 35 -28 -1))))]
     (->> []
-         (with bass double-canon)
-         (with riff)
+         ;(with bass)
+         ;(with riff)
          ;(with whirl)
-         ;(with robot)
-         (with beat #_back-beat)
+         ;(with beat steady #_flat)
          ;(with hit)
          ;(with (->> scale (with (where :pitch (from 2) scale))))
          ;(with alt-bass #_rising twiddle decoration)
          (times 2)
-         (wherever (comp not :theme) :pitch (fnil (comp B minor) 0))
+         (where :pitch (comp B minor))
+         (with (->> "GEB"
+                    (map coding/char->ascii)
+                    (phrase bar-lengths)
+                    #_(canon #(->> % ascii (canon initial)))))
          (tempo (bpm 90)))))
 
 (comment
@@ -90,18 +82,17 @@
 
 (definst overchauffeur [freq 110 dur 1.0 top 1500 vol 0.25]
   (let [inst (-> (sin-osc freq)
-                 (* (+ 0.4 (* 0.4 (sin-osc 1.5 0.5))))
-                 (+ (* 1/3 (sin-osc (* 2.001 freq))))
-                 (+ (* 1/4 (sin-osc (* 3.005 freq))))
+                 (+ (* 1/6 (sin-osc (* 2.987 freq))))
+                 (+ (* 1/6 (sin-osc (* 3.004 freq))))
                  (+ (* 1/5 (sin-osc (* 4.01 freq))))
-                 (+ (sin-osc (* 0.5 freq)))
+                 (+ (* 1/2 (sin-osc (* 0.5 freq))))
                  (* 3)
                  (clip2 0.6)
                  (* 8)
                  (clip2 0.9)
                  ;(* (square 1.5))
                  (rlpf resonance 0.2)
-                 (* (env-gen (adsr 0.003 0.2 0.6 0.1) (line:kr 1 0 dur) :action FREE))
+                 (* (env-gen (adsr 0.003 0.2 0.5 0.1) (line:kr 1 0 dur) :action FREE))
                  (* vol))
         delayed (delay-l inst 0.001)
         reverbed (free-verb delayed :damp 0.1 :mix 0.1 :room 0.2)
@@ -114,7 +105,7 @@
 
 (defmethod live/play-note :kick
   [{midi :pitch seconds :duration}]
-  (some-> midi midi->hz (drums/kick2 :amp 4 :decay 0.1 :noise 0.01)))
+  (some-> midi midi->hz (drums/kick2 :amp 2 :decay 0.1 :noise 0.01)))
 
 (defmethod live/play-note :snare
   [{midi :pitch seconds :duration}]
@@ -122,21 +113,22 @@
 
 (defmethod live/play-note :clap
   [{midi :pitch seconds :duration}]
-  (some-> midi midi->hz (drums/haziti-clap :amp 5)))
+  (some-> midi midi->hz (drums/haziti-clap :amp 3.0)))
 
 (defmethod live/play-note :click
   [{midi :pitch seconds :duration}]
-  (some-> midi midi->hz (drums/closed-hat :amp 0.2 :hi resonance)))
+  (drums/closed-hat :amp 0.1))
 
 (def godel (sample "samples/goedel.aiff"))
 (def escher (sample "samples/escher.aiff"))
 (def bach (sample "samples/bach.aiff"))
 
 (defn book [initial]
-  (({\G godel
-     \E escher
-     \B bach}
-    initial)))
+  (({(coding/char->ascii \G) godel
+     (coding/char->ascii \E) escher
+     (coding/char->ascii \B) bach}
+    initial
+    (constantly nil))))
 
 (defmethod live/play-note :sample
   [{initial :pitch}]
