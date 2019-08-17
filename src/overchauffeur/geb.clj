@@ -10,20 +10,32 @@
             [overchauffeur.coding :as coding]))
 
 (def bar-lengths [3.5 3.5 7])
+(def alt-bar-lengths [4 4 8])
 (def progression [-2 -1 0 0])
 
-(def geb
-  (let [ascii #(where :pitch coding/ascii->midi %)
-        initial #(->> % (where :pitch coding/midi->ascii) (all :part :sample))
-        bass (->> (phrase [3 0.5 3 0.5 6.5 0.5] [-2 -2 -1 -1 0 0])
-                  (canon (interval -7))
-                  (where :pitch (comp lower lower)))
-        alt-bass (->> (phrase (repeat 4 4) (cycle [3 0]))
+(def alt
+  (let [alt-bass (->> (phrase (repeat 4 4) (cycle [3 0]))
                       (canon (interval -7))
                       (where :pitch (comp lower lower)))
-        rising (->> (phrase [4 4 8] progression)
+        rising (->> (phrase alt-bar-lengths progression)
                     (canon (interval -7))
                     (where :pitch (comp lower lower)))
+        twiddle (phrase (repeat 64 1/4) (cycle [4 2 5 4 5 4 7 7]))
+        bomp (phrase (repeat 32 1/2) (cycle [4 2 2 0 -1]))
+        decoration (phrase (repeat 64 1/4) (cycle [7 8 9 11 7 6]))]
+    (->> (with alt-bass #_rising #_rising twiddle bomp decoration)
+         (times 2))))
+
+(def ascii (partial where :pitch coding/ascii->midi))
+(defn initial [notes]
+  (->> notes
+       (where :pitch coding/midi->ascii)
+       (all :part :sample)))
+
+(def geb
+  (let [bass (->> (phrase bar-lengths progression)
+                  (canon (interval -7))
+                  (where :pitch (comp lower lower)))
         riff (->> progression
                   (mapthen #(->> (phrase (repeat 7 1/2)
                                          (interleave [[0 2] [0 2] [0 3] [0 2]] (repeat -3)))
@@ -32,26 +44,22 @@
                    (where :pitch (from 7))
                    (times 4)
                    (with (->> (phrase (repeat 28 1/4) (cycle [2 3]))
-                              (then (phrase (repeat 7 1) [2 2 2 2 2 2 1])))))
+                              (then (phrase (repeat 7 1) [2 2 2 2 2 1 1])))))
         hit (->> (phrase [2 0.5 0.5 0.5] [14 [7 11] [7 12] [7 11]])
                  (times 4))
-        twiddle (phrase (repeat 64 1/4) (cycle [4 2 5 4 5 4 7 7]))
-        bomp (phrase (repeat 32 1/2) (cycle [4 2 2 0 -1]))
-        decoration (phrase (repeat 64 1/4) (cycle [7 8 9 11 7 6]))
         beat (->> (phrase [1 1 0.5 0.5 0.5] (repeat -21))
                   (having :part [:kick :snare :clap :kick :snare])
                   (times 4))
         steady (->> (phrase (repeat 28 1/2) (repeat 0))
                     (having :part (repeat :click)))
         flat (->> (phrase (repeat 14 1) (repeat -21))
-                  (having :part (repeat :kick)))
-        scale (phrase (repeat 1/8) (concat (range -14 35 1) (range 35 -28 -1)))]
+                  (having :part (repeat :kick)))]
     (->> []
          ;(with bass #_riff)
          ;(with whirl #_hit)
          ;(with beat steady #_flat)
-         ;(with alt-bass #_rising twiddle bomp #_decoration)
          (times 2)
+         ;(with alt)
          (where :pitch (comp B minor))
          (with (->> "GEB"
                     (map coding/char->ascii)
@@ -93,7 +101,7 @@
                  (clip2 0.9)
                  ;(* (square 1.5))
                  (rlpf resonance 0.2)
-                 ;(+ (* 1/2 (square freq)))
+                 ;(* 0.4) (+ (square freq))
                  (* (env-gen (adsr 0.003 0.2 0.5 0.1)
                              (line:kr 1 0 dur) :action FREE))
                  (* vol))
