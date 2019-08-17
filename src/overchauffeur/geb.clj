@@ -1,8 +1,8 @@
 (ns overchauffeur.geb
-  (:require [overtone.live :refer :all :exclude [stop]]
+  (:require [overtone.live :refer :all :exclude [stop sharp flat]]
             [leipzig.melody :refer :all]
             [leipzig.canon :refer [canon interval]]
-            [leipzig.scale :refer [high low lower E B minor from]]
+            [leipzig.scale :refer [high low raise lower sharp flat E B minor major from]]
             [leipzig.live :as live]
             [leipzig.live :refer [stop]]
             [overtone.inst.drum :as drums]
@@ -22,8 +22,8 @@
                       (canon (interval -7))
                       (where :pitch (comp lower lower)))
         rising (->> (phrase [4 4 8] progression)
-                  (canon (interval -7))
-                  (where :pitch (comp lower lower)))
+                    (canon (interval -7))
+                    (where :pitch (comp lower lower)))
         riff (->> progression
                   (mapthen #(->> (phrase (repeat 7 1/2)
                                          (interleave [[0 2] [0 2] [0 3] [0 2]] (repeat -3)))
@@ -32,12 +32,11 @@
                    (where :pitch (from 7))
                    (times 4)
                    (with (->> (phrase (repeat 28 1/4) (cycle [2 3]))
-                              (then (phrase (repeat 7 1) (repeat 2))))))
+                              (then (phrase (repeat 7 1) [2 2 2 2 2 2 1])))))
         hit (->> (phrase [2 0.5 0.5 0.5] [14 [7 11] [7 12] [7 11]])
                  (times 4))
-        twiddle (with
-                  (phrase (repeat 32 1/2) (cycle [4 2 2 0 -1]))
-                  (phrase (repeat 64 1/4) (cycle [4 2 5 4 5 4 7 7])))
+        twiddle (phrase (repeat 64 1/4) (cycle [4 2 5 4 5 4 7 7]))
+        bomp (phrase (repeat 32 1/2) (cycle [4 2 2 0 -1]))
         decoration (phrase (repeat 64 1/4) (cycle [7 8 9 11 7 6]))
         beat (->> (phrase [1 1 0.5 0.5 0.5] (repeat -21))
                   (having :part [:kick :snare :clap :kick :snare])
@@ -48,43 +47,44 @@
                   (having :part (repeat :kick)))
         scale (phrase (repeat 1/8) (concat (range -14 35 1) (range 35 -28 -1)))]
     (->> []
-         (with bass)
-         ;(with riff)
-         ;(with whirl)
+         ;(with bass #_riff)
+         ;(with whirl #_hit)
          ;(with beat steady #_flat)
-         ;(with hit)
-         ;(with (->> scale (canon (interval 2))))
-         ;(with #_alt-bass rising twiddle decoration)
+         ;(with alt-bass #_rising twiddle bomp #_decoration)
          (times 2)
          (where :pitch (comp B minor))
-         #_(with (->> "GEB"
+         (with (->> "GEB"
                     (map coding/char->ascii)
                     (phrase bar-lengths)
-                    #_(canon #(->> % ascii (canon initial)))))
+                    #_(canon ascii)
+                    #_(->> % ascii (canon initial))))
          (tempo (bpm 90)))))
+
+(comment
+  (volume 0.7)
+  (live/jam (var geb))
+  (def geb nil))
 
 (comment
   (map fx-chorus [0 1])
   (map fx-distortion [0 1] [2 2] [0.18 0.14])
-  (volume 0.7)
-  (live/jam (var geb))
-  (def geb nil)
 
   (do (recording-start "geb.aiff")
       (live/play geb))
   (recording-stop))
 
 ; Instrumentation
-(defsynth walker [out-bus 0 freq 0.5]
-  (out:kr out-bus (lf-noise1:kr freq)))
+(defonce x
+  (defsynth walker [out-bus 0 freq 0.5]
+    (out:kr out-bus (lf-noise1:kr freq))))
 (defonce random-walk (audio-bus))
-(defonce walk (walker random-walk))
-(def resonance (mul-add (in:kr random-walk) 2000 2500))
+(defonce walk (walker random-walk :freq (* 1/7 0.75)))
+(def resonance (mul-add (in:kr random-walk) 2500 3000))
 
 (definst overchauffeur [freq 110 dur 1.0 top 1500 vol 0.25]
   (let [inst (-> (sin-osc freq)
-                 (+ (* 1/5 (sin-osc (* 2.987 freq))))
-                 (+ (* 1/7 (sin-osc (* 3.004 freq))))
+                 (+ (* 1/8 (sin-osc (* 2.992 freq))))
+                 (+ (* 1/7 (sin-osc (* 3.003 freq))))
                  (+ (* 1/5 (sin-osc (* 4.01 freq))))
                  (+ (* 1/2 (sin-osc (* 0.5 freq))))
                  (* 3)
@@ -94,7 +94,8 @@
                  ;(* (square 1.5))
                  (rlpf resonance 0.2)
                  ;(+ (* 1/2 (square freq)))
-                 (* (env-gen (adsr 0.003 0.2 0.5 0.1) (line:kr 1 0 dur) :action FREE))
+                 (* (env-gen (adsr 0.003 0.2 0.5 0.1)
+                             (line:kr 1 0 dur) :action FREE))
                  (* vol))
         delayed (delay-l inst 0.001)
         reverbed (free-verb delayed :damp 0.1 :mix 0.1 :room 0.2)
@@ -123,7 +124,7 @@
 
 (defmethod live/play-note :click
   [{midi :pitch seconds :duration}]
-  (drums/closed-hat :amp 0.1))
+  (drums/closed-hat :amp 0.2))
 
 (defonce godel (sample "samples/goedel.aiff"))
 (defonce escher (sample "samples/escher.aiff"))
