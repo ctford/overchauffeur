@@ -57,7 +57,7 @@
                     (map coding/char->ascii)
                     (phrase bar-lengths)
                     #_(canon ascii)
-                    #_(->> % ascii (canon initial))))
+                    #_(canon #(->> % ascii (canon initial)))))
          (tempo (bpm 90)))))
 
 (comment
