@@ -146,7 +146,8 @@
      coding/e escher
      coding/b bach}
     initial
-    (constantly nil))))
+    (constantly nil))
+   :out-bus (rand-int 2)))
 
 (defmethod live/play-note :sample
   [{initial :pitch}]
